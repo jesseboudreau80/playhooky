@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  backend:
+    command: >
+      sh -c "
+        if [ -f /app/package.json ]; then
+          npm install && npm run dev -- --host 0.0.0.0 --port 8000;
+        elif [ -f /app/pyproject.toml ] || [ -f /app/requirements.txt ]; then
+          if [ -f /app/pyproject.toml ]; then
+            pip install --no-cache-dir -e . || true;
+          elif [ -f /app/requirements.txt ]; then
+            pip install --no-cache-dir -r /app/requirements.txt || true;
+          fi;
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload;
+        else
+          python -m http.server 8000;
+        fi
+      "
+
+  frontend:
+    command: >
+      sh -c "
+        if [ -f /app/package.json ]; then
+          npm install && npm run dev -- --host 0.0.0.0 --port 5173;
+        else
+          npx serve -l 5173 dist;
+        fi
+      "

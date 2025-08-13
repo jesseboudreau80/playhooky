@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+  db:
+    image: docker.io/library/postgres:16
+    environment:
+      POSTGRES_USER: playhooky
+      POSTGRES_PASSWORD: playhooky
+      POSTGRES_DB: playhooky
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U playhooky -d playhooky"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: docker.io/nikolaik/python-nodejs:python3.12-nodejs22
+    env_file:
+      - ./backend/.env.local
+    environment:
+      DATABASE_URL: postgres://playhooky:playhooky@db:5432/playhooky
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    image: docker.io/library/node:22-alpine
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      VITE_API_BASE: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
